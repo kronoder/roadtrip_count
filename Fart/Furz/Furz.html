@@ -185,29 +185,44 @@
     var emojis = ['💨','🌬️','😅','🤭','😂','💥','🎉'];
     display.textContent = count;
 
-    // Web Audio API for zero-latency playback
     var audioCtx = null;
     var audioBuffer = null;
+    var rawBuffer = null;
+    var audioEl = new Audio('fart.mp3');
+    audioEl.preload = 'auto';
 
-    function getAudioCtx() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      return audioCtx;
-    }
-
+    // Fetch raw bytes at page load — no AudioContext needed yet
     fetch('fart.mp3')
       .then(function(r) { return r.arrayBuffer(); })
-      .then(function(ab) { return getAudioCtx().decodeAudioData(ab); })
-      .then(function(buf) { audioBuffer = buf; })
+      .then(function(ab) { rawBuffer = ab; })
       .catch(function() {});
 
+    function initAudio() {
+      // Must be called inside a user gesture so iOS allows audio output
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      if (audioCtx && rawBuffer && !audioBuffer) {
+        var buf = rawBuffer;
+        rawBuffer = null;
+        audioCtx.decodeAudioData(buf, function(decoded) { audioBuffer = decoded; }, function() {});
+      }
+    }
+
     function playFart() {
-      var ctx = getAudioCtx();
-      if (ctx.state === 'suspended') ctx.resume();
-      if (!audioBuffer) return;
-      var src = ctx.createBufferSource();
-      src.buffer = audioBuffer;
-      src.connect(ctx.destination);
-      src.start(0);
+      initAudio();
+      if (audioBuffer) {
+        var src = audioCtx.createBufferSource();
+        src.buffer = audioBuffer;
+        src.connect(audioCtx.destination);
+        src.start(0);
+      } else {
+        // Fallback for first press while buffer is still decoding
+        audioEl.pause();
+        audioEl.currentTime = 0;
+        audioEl.play().catch(function() {});
+      }
     }
 
     function spawnParticles(x, y) {
