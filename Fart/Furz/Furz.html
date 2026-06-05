@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pollschgo`s Furz-O-Mat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f8f8f8;
+      --card: #ffffff;
+      --accent: #4f46e5;
+      --accent2: #ef4444;
+      --text: #111827;
+      --muted: #9ca3af;
+      --border: #e5e7eb;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      overflow-x: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 2rem 1rem;
+      gap: 2rem;
+    }
+    h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      color: var(--text);
+      text-align: center;
+      letter-spacing: 0.01em;
+      line-height: 1.1;
+    }
+    .subtitle {
+      font-size: clamp(0.85rem, 3vw, 1rem);
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.3rem;
+    }
+    .btn-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    #fart-btn {
+      width: clamp(180px, 55vw, 240px);
+      height: clamp(180px, 55vw, 240px);
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1.3rem, 4.5vw, 1.8rem);
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    #fart-btn:active, #fart-btn.pressed {
+      transform: scale(0.92);
+      box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+    }
+    #fart-btn .btn-emoji {
+      font-size: clamp(2.5rem, 9vw, 3.5rem);
+      line-height: 1;
+    }
+    .counter-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.5rem 2.5rem;
+      text-align: center;
+      min-width: 220px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .counter-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    #counter-display {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(3rem, 12vw, 5rem);
+      color: var(--accent);
+      line-height: 1;
+      transition: transform 0.1s ease;
+    }
+    #counter-display.bump { transform: scale(1.2); }
+    .counter-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+    .reset-btn {
+      margin-top: 1rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.8rem;
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .reset-btn:active { color: var(--accent2); border-color: var(--accent2); }
+    .fart-msg {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(1rem, 4vw, 1.3rem);
+      color: var(--accent2);
+      text-align: center;
+      min-height: 2rem;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    .fart-msg.show { opacity: 1; transform: translateY(0); }
+    .particles-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10;
+    }
+    .particle {
+      position: absolute;
+      font-size: 1.5rem;
+      animation: float-up 1s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes float-up {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-120px) scale(0.3); }
+    }
+  </style>
+</head>
+<body>
+  <audio id="fart-audio" src="fart.mp3" preload="auto"></audio>
+  <div class="particles-container" id="particles"></div>
+  <div>
+    <h1>Furz-O-Mat 3000</h1>
+    <p class="subtitle">Die offizielle Furz-Maschine</p>
+  </div>
+  <div class="btn-wrap">
+    <button id="fart-btn" aria-label="Furz-Button druecken">
+      <span class="btn-emoji">💨</span>
+      DRÜCK MICH
+    </button>
+    <div class="fart-msg" id="fart-msg">Prrrrrt!</div>
+  </div>
+  <div class="counter-card">
+    <div class="counter-label">Furz-Counter</div>
+    <div id="counter-display">0</div>
+    <div class="counter-sub">mal gepupst</div>
+    <button class="reset-btn" id="reset-btn">Zuruecksetzen</button>
+  </div>
+  <script>
+    var count = parseInt(localStorage.getItem('fartCount') || '0', 10);
+    var display = document.getElementById('counter-display');
+    var msg = document.getElementById('fart-msg');
+    var btn = document.getElementById('fart-btn');
+    var resetBtn = document.getElementById('reset-btn');
+    var particlesEl = document.getElementById('particles');
+    var fartAudio = document.getElementById('fart-audio');
+    var messages = ['Prrrrrt!','Braaap!','Pffft!','Tooooot!','Pffffffft!','Klassiker!','Oops...','Silent but deadly!','Riecht nach Rosen!','Wer war das?!','MEGA-Furz!'];
+    var emojis = ['💨','🌬️','😅','🤭','😂','💥','🎉'];
+    display.textContent = count;
+
+    function spawnParticles(x, y) {
+      for (var i = 0; i < 6; i++) {
+        var p = document.createElement('div');
+        p.className = 'particle';
+        p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        var spread = (Math.random() - 0.5) * 200;
+        p.style.left = (x + spread) + 'px';
+        p.style.top = y + 'px';
+        p.style.animationDuration = (0.6 + Math.random() * 0.6) + 's';
+        particlesEl.appendChild(p);
+        setTimeout((function(el){ return function(){ el.remove(); }; })(p), 1200);
+      }
+    }
+
+    function playFart() {
+      fartAudio.currentTime = 0;
+      fartAudio.play().catch(function(){});
+    }
+
+    btn.addEventListener('click', function(e) {
+      count++;
+      localStorage.setItem('fartCount', count);
+      display.textContent = count;
+      display.classList.remove('bump');
+      void display.offsetWidth;
+      display.classList.add('bump');
+      setTimeout(function(){ display.classList.remove('bump'); }, 200);
+      btn.classList.add('pressed');
+      setTimeout(function(){ btn.classList.remove('pressed'); }, 150);
+      var randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      msg.textContent = randomMsg;
+      msg.classList.remove('show');
+      void msg.offsetWidth;
+      msg.classList.add('show');
+      setTimeout(function(){ msg.classList.remove('show'); }, 900);
+      var rect = btn.getBoundingClientRect();
+      spawnParticles(rect.left + rect.width / 2, rect.top);
+      try { playFart(); } catch(err) {}
+    });
+
+    resetBtn.addEventListener('click', function() {
+      if (confirm('Counter wirklich auf 0 zuruecksetzen?')) {
+        count = 0;
+        localStorage.setItem('fartCount', 0);
+        display.textContent = 0;
+      }
+    });
+  </script>
+</body>
+</html>
