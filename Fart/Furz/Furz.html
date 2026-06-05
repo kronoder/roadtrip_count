@@ -156,7 +156,6 @@
   </style>
 </head>
 <body>
-  <audio id="fart-audio" src="fart.mp3" preload="auto"></audio>
   <div class="particles-container" id="particles"></div>
   <div>
     <h1>Pollschgo`s Furz-Upsi-Mat</h1>
@@ -182,10 +181,34 @@
     var btn = document.getElementById('fart-btn');
     var resetBtn = document.getElementById('reset-btn');
     var particlesEl = document.getElementById('particles');
-    var fartAudio = document.getElementById('fart-audio');
-    var messages = ['Prrrrrt!','Braaap!','Pffft!','Fenster öffnen!','Pffffffft!','Klassiker!','Oops...','Silent but deadly!','Riecht nach Rosen!','Wer war das?!', 'Soni???', 'Maik???', 'Nait???', 'Flo???',];
+    var messages = ['Balkan muss man verdauen können!','Nur noch Salat!','Fenster öffnen!','Pffffffft!','Der kam einfach so!','Oops...','Fastentage für alle!','Pollschgo Gooool!','Wer war das?!', 'Soni???', 'Maik???', 'Nait???', 'Flo???',];
     var emojis = ['💨','🌬️','😅','🤭','😂','💥','🎉'];
     display.textContent = count;
+
+    // Web Audio API for zero-latency playback
+    var audioCtx = null;
+    var audioBuffer = null;
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    fetch('fart.mp3')
+      .then(function(r) { return r.arrayBuffer(); })
+      .then(function(ab) { return getAudioCtx().decodeAudioData(ab); })
+      .then(function(buf) { audioBuffer = buf; })
+      .catch(function() {});
+
+    function playFart() {
+      var ctx = getAudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+      if (!audioBuffer) return;
+      var src = ctx.createBufferSource();
+      src.buffer = audioBuffer;
+      src.connect(ctx.destination);
+      src.start(0);
+    }
 
     function spawnParticles(x, y) {
       for (var i = 0; i < 6; i++) {
@@ -201,12 +224,9 @@
       }
     }
 
-    function playFart() {
-      fartAudio.currentTime = 0;
-      fartAudio.play().catch(function(){});
-    }
-
-    btn.addEventListener('click', function(e) {
+    btn.addEventListener('pointerdown', function(e) {
+      e.preventDefault();
+      playFart();
       count++;
       localStorage.setItem('fartCount', count);
       display.textContent = count;
@@ -224,7 +244,6 @@
       setTimeout(function(){ msg.classList.remove('show'); }, 900);
       var rect = btn.getBoundingClientRect();
       spawnParticles(rect.left + rect.width / 2, rect.top);
-      try { playFart(); } catch(err) {}
     });
 
     resetBtn.addEventListener('click', function() {
