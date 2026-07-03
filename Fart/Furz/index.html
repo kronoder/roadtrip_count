@@ -174,8 +174,27 @@
     <div class="counter-sub">mal gepupst</div>
     <button class="reset-btn" id="reset-btn">Zuruecksetzen</button>
   </div>
+  <!-- Firebase SDK (Realtime Database) für den geteilten Live-Counter -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script>
-    var count = parseInt(localStorage.getItem('fartCount') || '0', 10);
+    // ============================================================
+    // 1) HIER deine Firebase-Config einsetzen (aus der Firebase-Konsole).
+    //    Anleitung steht ganz unten im Chat / README.
+    // ============================================================
+    var firebaseConfig = {
+      apiKey: "AIzaSyBrgZnlzs8iQGaLdmQEJYN0BsGlzpK6SNM",
+      authDomain: "furz-o-mat.firebaseapp.com",
+      databaseURL: "https://furz-o-mat-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "furz-o-mat",
+      storageBucket: "furz-o-mat.firebasestorage.app",
+      messagingSenderId: "959321049551",
+      appId: "1:959321049551:web:63e233786ece73502aeaba"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var counterRef = firebase.database().ref('fartCount');
+
+    var count = 0;
     var display = document.getElementById('counter-display');
     var msg = document.getElementById('fart-msg');
     var btn = document.getElementById('fart-btn');
@@ -184,6 +203,23 @@
     var messages = ['Balkan muss man verdauen können!','Nur noch Salat!','Fenster öffnen!','Pffffffft!','Der kam einfach so!','Oops...','Fastentage für alle!','Pollschgo Gooool!','Wer war das?!', 'Soni???', 'Maik???', 'Nait???', 'Flo???',];
     var emojis = ['💨','🌬️','😅','🤭','😂','💥','🎉'];
     display.textContent = count;
+
+    // Live-Sync: sobald IRGENDEIN Nutzer den Zähler ändert, kommt hier der
+    // neue Wert an und wird bei allen offenen Seiten sofort aktualisiert.
+    counterRef.on('value', function(snap) {
+      var newCount = snap.val() || 0;
+      var changed = newCount !== count;
+      count = newCount;
+      display.textContent = count;
+      if (changed) {
+        display.classList.remove('bump');
+        void display.offsetWidth;
+        display.classList.add('bump');
+        setTimeout(function(){ display.classList.remove('bump'); }, 200);
+      }
+    }, function(err) {
+      console.error('Firebase-Fehler:', err);
+    });
 
     var audioCtx = null;
     var audioBuffer = null;
@@ -242,13 +278,12 @@
     btn.addEventListener('pointerdown', function(e) {
       e.preventDefault();
       playFart();
-      count++;
-      localStorage.setItem('fartCount', count);
-      display.textContent = count;
-      display.classList.remove('bump');
-      void display.offsetWidth;
-      display.classList.add('bump');
-      setTimeout(function(){ display.classList.remove('bump'); }, 200);
+      // Atomar in der Cloud +1 zählen. Das Display wird NICHT hier direkt
+      // gesetzt – der 'value'-Listener oben aktualisiert es für alle Nutzer
+      // (inkl. uns selbst), sobald der neue Wert bestätigt ist.
+      counterRef.transaction(function(current) {
+        return (current || 0) + 1;
+      });
       btn.classList.add('pressed');
       setTimeout(function(){ btn.classList.remove('pressed'); }, 150);
       var randomMsg = messages[Math.floor(Math.random() * messages.length)];
@@ -262,10 +297,9 @@
     });
 
     resetBtn.addEventListener('click', function() {
-      if (confirm('Counter wirklich auf 0 zuruecksetzen?')) {
-        count = 0;
-        localStorage.setItem('fartCount', 0);
-        display.textContent = 0;
+      if (confirm('Counter für ALLE wirklich auf 0 zuruecksetzen?')) {
+        // Setzt den globalen Zähler zurück – wirkt bei allen Nutzern.
+        counterRef.set(0);
       }
     });
   </script>
